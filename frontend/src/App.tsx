@@ -4,11 +4,11 @@ import { useAppConfig, APP_ID, CONTROL_PLANE } from './engine/ConfigLoader';
 import { WorkflowRouter } from './engine/WorkflowRouter';
 import { Sidebar } from './components/Sidebar';
 import { MutationsInbox } from './components/MutationsInbox';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { track } from './telemetry/sdk';
 import axios from 'axios';
 import './index.css';
 
-type SpecialView = '__mutations__' | '__analytics__';
 
 export default function App() {
   const { config, loading, error, refresh } = useAppConfig();
@@ -121,7 +121,7 @@ export default function App() {
           {activeViewId === '__mutations__' ? (
             <MutationsInbox onConfigChanged={() => { refresh(); setPendingCount(0); }} />
           ) : activeViewId === '__analytics__' ? (
-            <AnalyticsPlaceholder />
+            <AnalyticsDashboard />
           ) : (
             <WorkflowRouter
               config={config}
@@ -133,46 +133,4 @@ export default function App() {
         </div>
       </div>
     </div>
-  );
-}
-
-function AnalyticsPlaceholder() {
-  const [summary, setSummary] = useState<any>(null);
-  useEffect(() => {
-    axios.get('http://localhost:3002/events/summary')
-      .then(r => setSummary(r.data))
-      .catch(() => {});
-  }, []);
-
-  return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700 }}>Telemetry Analytics</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>
-          Phase 2 will connect this to ClickHouse for full behavioral analytics. Currently showing in-memory event stream.
-        </p>
-      </div>
-      <div className="stat-grid">
-        <div className="stat-card">
-          <div className="stat-label">Total Events</div>
-          <div className="stat-value">{summary?.total ?? 0}</div>
-        </div>
-        {summary?.by_type && Object.entries(summary.by_type).map(([type, count]) => (
-          <div className="stat-card" key={type}>
-            <div className="stat-label">{type}</div>
-            <div className="stat-value">{count as number}</div>
-          </div>
-        ))}
-      </div>
-      <div className="card" style={{ marginTop: 24 }}>
-        <div className="card-title">Phase 2 Roadmap</div>
-        <ul style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 2, paddingLeft: 20 }}>
-          <li>ClickHouse integration for persistent OLAP storage</li>
-          <li>Session-to-graph transformation (workflow path visualization)</li>
-          <li>Bottleneck & friction point detection</li>
-          <li>Drop-off funnel analysis per workflow step</li>
-        </ul>
-      </div>
-    </div>
-  );
 }

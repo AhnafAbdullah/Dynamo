@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { AppConfig, ViewConfig } from '../engine/ConfigLoader';
 import { StatCard } from '../components/StatCard';
 import { DynamicTable } from '../components/DynamicTable';
@@ -17,18 +17,42 @@ export function WorkflowRouter({ config, activeViewId, onNavigate, routeParams }
   const view = config.ui.views.find(v => v.id === activeViewId);
   if (!view) return <div className="empty-state"><p>View "{activeViewId}" not found in config.</p></div>;
 
+  // Group consecutive StatCards into a single stat-grid row
+  type Group =
+    | { type: 'statgrid'; comps: typeof view.components }
+    | { type: 'single';   comp:  typeof view.components[number] };
+
+  const groups: Group[] = [];
+  for (const comp of view.components) {
+    if (comp.type === 'StatCard') {
+      const last = groups[groups.length - 1];
+      if (last?.type === 'statgrid') last.comps.push(comp);
+      else groups.push({ type: 'statgrid', comps: [comp] });
+    } else {
+      groups.push({ type: 'single', comp });
+    }
+  }
+
   return (
     <div>
-      {view.components.map(comp => (
-        <ComponentRenderer
-          key={comp.id}
-          comp={comp}
-          view={view}
-          appConfig={config}
-          onNavigate={onNavigate}
-          routeParams={routeParams}
-        />
-      ))}
+      {groups.map((g, i) =>
+        g.type === 'statgrid' ? (
+          <div key={`statgrid-${i}`} className="stat-grid" style={{ marginBottom: 24 }}>
+            {g.comps.map(comp => (
+              <StatCard key={comp.id} config={comp as any} appConfig={config} />
+            ))}
+          </div>
+        ) : (
+          <ComponentRenderer
+            key={g.comp.id}
+            comp={g.comp}
+            view={view}
+            appConfig={config}
+            onNavigate={onNavigate}
+            routeParams={routeParams}
+          />
+        )
+      )}
     </div>
   );
 }
@@ -51,13 +75,6 @@ function ComponentRenderer({
   }, [comp.row_action, view.id, appConfig.app_id, onNavigate]);
 
   switch (comp.type) {
-    case 'StatCard':
-      return (
-        <div className="stat-grid" key={comp.id} style={{ marginBottom: 0 }}>
-          <StatCard config={comp as any} appConfig={appConfig} />
-        </div>
-      );
-
     case 'DataTable':
       return (
         <div style={{ marginBottom: 24 }}>
