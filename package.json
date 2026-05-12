@@ -1,0 +1,17 @@
+{
+  "name": "adaptive-runtime-platform",
+  "version": "1.0.0",
+  "description": "Adaptive Runtime Platform — Monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:gateway dev:control-plane dev:frontend",
+    "dev:control-plane": "cd control-plane && node --watch src/index.js",
+    "dev:gateway": "cd event-gateway && node --watch src/index.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "seed": "cd control-plane && node src/db/seed.js",
+    "setup": "npm run seed"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}

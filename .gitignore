@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.npm/
+
+# Build outputs
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Database files (runtime, not committed)
+control-plane/data/*.db
+control-plane/data/*.db-shm
+control-plane/data/*.db-wal
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Vite
+frontend/.vite/
+
+# TypeScript
+*.tsbuildinfo
