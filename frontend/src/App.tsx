@@ -9,7 +9,6 @@ import { track } from './telemetry/sdk';
 import axios from 'axios';
 import './index.css';
 
-
 export default function App() {
   const { config, loading, error, refresh } = useAppConfig();
   const [activeViewId, setActiveViewId] = useState<string>('view-dashboard');
@@ -17,7 +16,7 @@ export default function App() {
   const [navHistory, setNavHistory] = useState<string[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
 
-  // Poll pending mutation count for badge
+  // Poll pending mutation count for sidebar badge
   useEffect(() => {
     const poll = () => {
       axios.get(`${CONTROL_PLANE}/api/apps/${APP_ID}/mutations`)
@@ -133,4 +132,5 @@ export default function App() {
         </div>
       </div>
     </div>
+  );
 }

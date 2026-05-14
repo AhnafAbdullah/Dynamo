@@ -19,7 +19,7 @@ app.use((req, _res, next) => {
 
 // Routes
 app.use('/api/apps', appsRouter);
-app.use('/api/apps', mutationsRouter); // mutations are nested: /api/apps/:appId/mutations
+app.use('/api/apps/:appId/mutations', mutationsRouter); // mutations are nested: /api/apps/:appId/mutations
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'control-plane' }));

@@ -7,7 +7,7 @@ const db = require('../db/database');
 // GET /api/apps/:appId/mutations  — list all mutations for an app
 router.get('/', (req, res) => {
   const mutations = db.prepare(
-    'SELECT mutation_id, title, description, status, source, created_at, resolved_at FROM mutations WHERE app_id = ? ORDER BY created_at DESC'
+    'SELECT mutation_id, title, description, status, source, patch, created_at, resolved_at FROM mutations WHERE app_id = ? ORDER BY created_at DESC'
   ).all(req.params.appId);
   res.json({ mutations });
 });
