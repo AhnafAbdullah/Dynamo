@@ -1,67 +1,111 @@
-# Dynamo — Adaptive Runtime Platform
+# Dynamo: Adaptive Runtime Platform
 
-Dynamo is an intelligent runtime platform that dynamically generates and adapts web application UIs and workflows from declarative JSON configurations. Instead of shipping static software, teams define **what** they want — entities, forms, workflows, permissions — and the platform renders the experience, tracks real user behaviour, and lets an AI layer propose UI/workflow improvements that can be previewed and deployed with a single click.
+Dynamo is an experimental **Adaptive Runtime Software Platform**. It explores a novel software paradigm where applications are not hardcoded, but instead exist as declarative metadata. This allows the platform to continuously monitor user behavior, infer intent, and autonomously propose or apply UI and workflow improvements—all while maintaining strict safety boundaries.
+
+Instead of an AI randomly editing raw source code, Dynamo acts as a managed runtime ecosystem where all customer applications are defined by JSON configurations and JSON Patches.
+
+## 🌟 Core Philosophy
+
+1. **Declarative Infrastructure**: The UI is entirely generated at runtime from a central JSON configuration.
+2. **Behavioral Observability**: Every click, navigation, and form interaction is ingested by a telemetry system.
+3. **Intent Inference**: An Intelligence Service analyzes the behavioral graph to find friction points (e.g., high form abandonment, inefficient multi-step workflows).
+4. **Controlled Mutation**: The AI proposes non-destructive `JSON Patches`. Admins can shadow-preview these changes, run them as A/B experiments, and seamlessly deploy them.
 
 ---
 
-## Architecture
+## 🏗️ Architecture & Features
 
-```
-┌─────────────────────────────────────────┐
-│              Frontend (React)            │  :5173
-│  Adaptive Engine • Workflow Router       │
-│  Telemetry SDK • Mutations Inbox         │
-└────────────────┬────────────────────────┘
-                 │ REST
-       ┌─────────┴──────────┐
-       │                    │
-┌──────▼──────┐    ┌────────▼────────┐
-│Control Plane│    │ Event Gateway   │  :3002
-│ Node/Express│    │ Telemetry +     │
-│   :3001     │    │ Mock API        │
-│  SQLite DB  │    │ (in-memory)     │
-└─────────────┘    └─────────────────┘
-```
+The Dynamo monorepo consists of four main components representing the progressive phases of an adaptive system:
 
-## Services
+### 1. Control Plane (`/control-plane`)
+A Node.js/Express service backed by SQLite. It acts as the source of truth for the platform, storing:
+- Declarative Application Configurations (JSON).
+- The `Mutations` inbox where AI-generated `JSON Patches` await review.
+- App Versioning and History.
 
-| Service | Port | Description |
-|---|---|---|
-| `frontend` | 5173 | Adaptive React UI engine |
-| `control-plane` | 3001 | App config CRUD + Mutations API |
-| `event-gateway` | 3002 | Telemetry ingestion + Mock REST API |
+### 2. UI Rendering Engine (`/frontend`)
+A React (Vite) application that dynamically renders the application UI based on the metadata from the Control Plane.
+- Includes the **Telemetry SDK**, which seamlessly tracks user sessions and interactions.
+- Has a built-in **ConfigLoader** that dynamically applies A/B Experiment JSON Patches directly in the browser via deterministic session hashing.
+- Contains the **AI Mutations Inbox** and **Behavioral Analytics Dashboard** for admins.
 
-## Quickstart
+### 3. Event Gateway (`/event-gateway`)
+A dedicated Node.js service that acts as the telemetry ingest pipeline.
+- Uses a high-performance SQLite database (`events.db`) to log raw behavioral data.
+- Exposes aggregated analytics endpoints (Navigation Flows, Session Tracking, Form Drop-offs) for the frontend dashboard and the AI engine.
+
+### 4. Intelligence Service (`/intelligence-service`)
+A Python daemon that acts as the analytical brain of the platform.
+- Pulls telemetry from the Event Gateway.
+- Uses intelligent heuristics (simulating an LLM) to analyze abandonment and workflow sequences.
+- Generates precise, RFC-6902 compliant `JSON Patches` that are pushed to the Control Plane as pending mutations.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+- Python (3.10+)
+
+### Installation
+From the root of the repository, install the dependencies for all services:
 
 ```bash
-# 1. Install all dependencies
+# Install root orchestrator dependencies
 npm install
-cd frontend && npm install && cd ..
-cd control-plane && npm install && cd ..
-cd event-gateway && npm install && cd ..
 
-# 2. Seed the demo app
-npm run seed
+# Install Control Plane dependencies
+cd control-plane
+npm install
 
-# 3. Start all three services
+# Install Event Gateway dependencies
+cd ../event-gateway
+npm install
+
+# Install Frontend dependencies
+cd ../frontend
+npm install
+
+# Install Intelligence Service dependencies
+cd ../intelligence-service
+pip install -r requirements.txt
+```
+
+### Running the Platform
+
+Dynamo uses `npm-run-all` to launch the core stack concurrently. From the root directory:
+
+```bash
 npm run dev
 ```
 
-Then open **http://localhost:5173**.
+This starts:
+- **Control Plane API**: `http://localhost:3001`
+- **Event Gateway**: `http://localhost:3002`
+- **Frontend UI**: `http://localhost:5173`
 
-## Key Concepts
+*(Note: The Control Plane will automatically seed the database with a Demo Application when first run).*
 
-- **Declarative App Config** — every app is a JSON document describing UI views, workflow routing, and API bindings. No code is touched to change the app.
-- **Mutations** — AI (or a human) submits a JSON Patch against the config. It is stored as a pending "Mutation Request."
-- **Shadow Preview** — admins can preview exactly what the UI would look like after a mutation before approving it.
-- **Approve & Deploy** — clicking Approve atomically applies the patch, increments the version, and immediately updates the live frontend.
-- **Telemetry SDK** — every click, navigation, form interaction, and API error is captured and sent to the Event Gateway for future analytics.
+### Triggering the AI Intelligence Engine
 
-## Roadmap
+To simulate the AI analyzing user behavior and generating a UI mutation:
 
-| Phase | Status |
-|---|---|
-| Phase 1: Static Declarative UI Engine | ✅ Complete |
-| Phase 2: Behavioral Analytics & Observability | 🔄 In Progress |
-| Phase 3: AI Recommendation System | 🔜 Planned |
-| Phase 4: Controlled UI Mutation (Full Autonomy) | 🔜 Planned |
+1. Interact with the application on `http://localhost:5173` (e.g., generate demo events in the Analytics dashboard).
+2. Run the Intelligence Service:
+   ```bash
+   cd intelligence-service
+   python main.py
+   ```
+3. Return to the web app and navigate to the **AI Inbox**. You will see a new pending UI optimization.
+4. Click **Start A/B Experiment** to deploy it to 50% of sessions, or **Shadow Preview** to see the raw diff.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 19, TypeScript, Vite, Zustand, TailwindCSS / Custom CSS Tokens, Lucide Icons
+- **Backend / APIs**: Node.js, Express
+- **Databases**: Better-SQLite3
+- **Intelligence Layer**: Python, Requests
+- **Data Mutability**: fast-json-patch
