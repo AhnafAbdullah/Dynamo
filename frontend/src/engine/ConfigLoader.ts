@@ -70,7 +70,21 @@ export async function fetchConfig(): Promise<AppConfig> {
       console.log('🧪 Applying active experiments:', data.experiments.map((e: any) => e.title));
       data.experiments.forEach((exp: any) => {
         try {
-          config = applyPatch(config, exp.patch).newDocument;
+          if (Array.isArray(exp.patch)) {
+            config = applyPatch(config, exp.patch).newDocument;
+          } else if (exp.patch.css || exp.patch.js) {
+            console.log(`✨ Injecting Dazzling UI Aesthetic: ${exp.title}`);
+            if (exp.patch.css) {
+              const style = document.createElement('style');
+              style.innerHTML = exp.patch.css;
+              document.head.appendChild(style);
+            }
+            if (exp.patch.js) {
+              const script = document.createElement('script');
+              script.innerHTML = exp.patch.js;
+              document.body.appendChild(script);
+            }
+          }
         } catch (e) {
           console.error(`Failed to apply experiment patch ${exp.mutation_id}:`, e);
         }

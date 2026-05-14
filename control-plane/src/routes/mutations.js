@@ -25,9 +25,12 @@ router.post('/', (req, res) => {
   let parsedPatch;
   try {
     parsedPatch = typeof patch === 'string' ? JSON.parse(patch) : patch;
-    jsonpatch.apply_patch(JSON.parse(app.config), parsedPatch); // dry-run validation
+    if (Array.isArray(parsedPatch)) {
+      jsonpatch.apply_patch(JSON.parse(app.config), parsedPatch); // dry-run validation
+    }
+    // If it's not an array, we assume it's a DOM injection payload like { css, js }
   } catch (err) {
-    return res.status(400).json({ error: `Invalid JSON Patch: ${err.message}` });
+    return res.status(400).json({ error: `Invalid Patch payload: ${err.message}` });
   }
 
   const mutation_id = `mut-${uuidv4().slice(0, 8)}`;
@@ -70,9 +73,11 @@ router.post('/:mutationId/approve', (req, res) => {
   const currentConfig = JSON.parse(app.config);
   const patch = JSON.parse(mutation.patch);
 
-  let newConfig;
+  let newConfig = currentConfig;
   try {
-    newConfig = jsonpatch.apply_patch(currentConfig, patch);
+    if (Array.isArray(patch)) {
+      newConfig = jsonpatch.apply_patch(currentConfig, patch);
+    }
   } catch (err) {
     return res.status(500).json({ error: `Patch application failed: ${err.message}` });
   }

@@ -73,6 +73,23 @@ export function MutationsInbox({ onConfigChanged }: MutationsInboxProps) {
   const experimenting = mutations.filter(m => m.status === 'experimenting');
   const resolved = mutations.filter(m => m.status === 'approved' || m.status === 'rejected');
 
+  const renderPatchCode = (patchStr: string) => {
+    try {
+      const parsed = JSON.parse(patchStr);
+      if (parsed.css || parsed.js) {
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+            {parsed.css && <div><strong style={{fontSize: 11, color: 'var(--accent)'}}>INJECT CSS:</strong><pre className="mutation-patch" style={{marginTop: 4}}>{parsed.css}</pre></div>}
+            {parsed.js && <div><strong style={{fontSize: 11, color: '#f59e0b'}}>INJECT JS:</strong><pre className="mutation-patch" style={{marginTop: 4}}>{parsed.js}</pre></div>}
+          </div>
+        );
+      }
+      return <pre className="mutation-patch" style={{marginTop: '12px'}}>{JSON.stringify(parsed, null, 2)}</pre>;
+    } catch {
+      return <pre className="mutation-patch" style={{marginTop: '12px'}}>{patchStr}</pre>;
+    }
+  };
+
   if (loading) return <div className="loading-page"><div className="spinner" /></div>;
 
   return (
@@ -114,7 +131,7 @@ export function MutationsInbox({ onConfigChanged }: MutationsInboxProps) {
                 </div>
               </div>
               <p className="mutation-desc">{m.description}</p>
-              <div className="mutation-patch">{JSON.stringify(JSON.parse(m.patch), null, 2)}</div>
+              {renderPatchCode(m.patch)}
 
               {preview?.id === m.mutation_id && (
                 <div style={{ marginBottom: 16, padding: 16, background: 'var(--bg-base)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-active)' }}>
@@ -177,6 +194,7 @@ export function MutationsInbox({ onConfigChanged }: MutationsInboxProps) {
                 <span className="badge badge-pending">Experimenting (50%)</span>
               </div>
               <p className="mutation-desc">{m.description}</p>
+              {renderPatchCode(m.patch)}
               
               <div className="mutation-actions" style={{ marginTop: 16 }}>
                 <button className="btn btn-success btn-sm" onClick={() => act(m.mutation_id, 'approve')} disabled={acting === m.mutation_id}>
