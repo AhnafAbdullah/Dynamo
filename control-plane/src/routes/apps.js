@@ -31,11 +31,22 @@ router.get('/:appId', (req, res) => {
   if (!app) return res.status(404).json({ error: 'App not found' });
   app.config = JSON.parse(app.config);
 
-  // Attach active experiments
-  const experiments = db.prepare(
-    "SELECT mutation_id, title, patch FROM mutations WHERE app_id = ? AND status = 'experimenting'"
+  // Attach active experiments and approved permanent DOM injections
+  const activeMutations = db.prepare(
+    "SELECT mutation_id, title, patch, status FROM mutations WHERE app_id = ? AND status IN ('experimenting', 'approved')"
   ).all(req.params.appId);
-  app.experiments = experiments.map(e => ({ ...e, patch: JSON.parse(e.patch) }));
+
+  app.experiments = [];
+  app.injections = [];
+
+  activeMutations.forEach(m => {
+    const parsed = JSON.parse(m.patch);
+    if (m.status === 'experimenting') {
+      app.experiments.push({ ...m, patch: parsed });
+    } else if (m.status === 'approved' && !Array.isArray(parsed) && (parsed.css || parsed.js)) {
+      app.injections.push({ ...m, patch: parsed });
+    }
+  });
 
   res.json(app);
 });

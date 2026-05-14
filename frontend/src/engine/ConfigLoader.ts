@@ -59,6 +59,27 @@ export async function fetchConfig(): Promise<AppConfig> {
   const { data } = await axios.get(`${CONTROL_PLANE}/api/apps/${APP_ID}`);
   let config = data.config;
 
+  // Apply Approved DOM Injections (Full Rollout)
+  if (data.injections && data.injections.length > 0) {
+    console.log('✨ Applying full-rollout DOM Injections:', data.injections.map((e: any) => e.title));
+    data.injections.forEach((exp: any) => {
+      try {
+        if (exp.patch.css) {
+          const style = document.createElement('style');
+          style.innerHTML = exp.patch.css;
+          document.head.appendChild(style);
+        }
+        if (exp.patch.js) {
+          const script = document.createElement('script');
+          script.innerHTML = exp.patch.js;
+          document.body.appendChild(script);
+        }
+      } catch (e) {
+        console.error(`Failed to apply permanent injection ${exp.mutation_id}:`, e);
+      }
+    });
+  }
+
   // Apply Active Experiments (A/B testing via deterministic bucketing)
   if (data.experiments && data.experiments.length > 0) {
     const sid = getSessionId();
@@ -73,7 +94,7 @@ export async function fetchConfig(): Promise<AppConfig> {
           if (Array.isArray(exp.patch)) {
             config = applyPatch(config, exp.patch).newDocument;
           } else if (exp.patch.css || exp.patch.js) {
-            console.log(`✨ Injecting Dazzling UI Aesthetic: ${exp.title}`);
+            console.log(`✨ Injecting Experimental UI Aesthetic: ${exp.title}`);
             if (exp.patch.css) {
               const style = document.createElement('style');
               style.innerHTML = exp.patch.css;
