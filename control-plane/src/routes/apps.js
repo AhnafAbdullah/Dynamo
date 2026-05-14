@@ -30,6 +30,13 @@ router.get('/:appId', (req, res) => {
   const app = db.prepare('SELECT * FROM apps WHERE app_id = ?').get(req.params.appId);
   if (!app) return res.status(404).json({ error: 'App not found' });
   app.config = JSON.parse(app.config);
+
+  // Attach active experiments
+  const experiments = db.prepare(
+    "SELECT mutation_id, title, patch FROM mutations WHERE app_id = ? AND status = 'experimenting'"
+  ).all(req.params.appId);
+  app.experiments = experiments.map(e => ({ ...e, patch: JSON.parse(e.patch) }));
+
   res.json(app);
 });
 

@@ -63,7 +63,7 @@ router.post('/:mutationId/approve', (req, res) => {
     req.params.mutationId, req.params.appId
   );
   if (!mutation) return res.status(404).json({ error: 'Mutation not found' });
-  if (mutation.status !== 'pending')
+  if (mutation.status !== 'pending' && mutation.status !== 'experimenting')
     return res.status(409).json({ error: `Mutation is already ${mutation.status}` });
 
   const app = db.prepare('SELECT * FROM apps WHERE app_id = ?').get(req.params.appId);
@@ -98,11 +98,21 @@ router.post('/:mutationId/approve', (req, res) => {
 // POST /api/apps/:appId/mutations/:mutationId/reject
 router.post('/:mutationId/reject', (req, res) => {
   const result = db.prepare(
-    'UPDATE mutations SET status = \'rejected\', resolved_at = datetime(\'now\') WHERE mutation_id = ? AND app_id = ? AND status = \'pending\''
+    "UPDATE mutations SET status = 'rejected', resolved_at = datetime('now') WHERE mutation_id = ? AND app_id = ? AND status IN ('pending', 'experimenting')"
   ).run(req.params.mutationId, req.params.appId);
 
   if (result.changes === 0) return res.status(404).json({ error: 'Pending mutation not found' });
   res.json({ message: 'Mutation rejected' });
+});
+
+// POST /api/apps/:appId/mutations/:mutationId/experiment
+router.post('/:mutationId/experiment', (req, res) => {
+  const result = db.prepare(
+    "UPDATE mutations SET status = 'experimenting' WHERE mutation_id = ? AND app_id = ? AND status = 'pending'"
+  ).run(req.params.mutationId, req.params.appId);
+
+  if (result.changes === 0) return res.status(404).json({ error: 'Pending mutation not found' });
+  res.json({ message: 'Mutation is now an active experiment' });
 });
 
 module.exports = router;

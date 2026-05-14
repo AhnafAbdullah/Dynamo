@@ -43,11 +43,45 @@ export interface ComponentConfig {
 let cache: { config: AppConfig; at: number } | null = null;
 const TTL = 5000; // 5 seconds
 
+import { applyPatch } from 'fast-json-patch';
+
+export function getSessionId() {
+  let sid = localStorage.getItem('dynamo_session_id');
+  if (!sid) {
+    sid = Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('dynamo_session_id', sid);
+  }
+  return sid;
+}
+
 export async function fetchConfig(): Promise<AppConfig> {
   if (cache && Date.now() - cache.at < TTL) return cache.config;
   const { data } = await axios.get(`${CONTROL_PLANE}/api/apps/${APP_ID}`);
-  cache = { config: data.config, at: Date.now() };
-  return data.config;
+  let config = data.config;
+
+  // Apply Active Experiments (A/B testing via deterministic bucketing)
+  if (data.experiments && data.experiments.length > 0) {
+    const sid = getSessionId();
+    // Simple string hash
+    const hash = sid.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0);
+    const inExperimentGroup = Math.abs(hash) % 2 === 0; // 50% rollout
+
+    if (inExperimentGroup) {
+      console.log('🧪 Applying active experiments:', data.experiments.map((e: any) => e.title));
+      data.experiments.forEach((exp: any) => {
+        try {
+          config = applyPatch(config, exp.patch).newDocument;
+        } catch (e) {
+          console.error(`Failed to apply experiment patch ${exp.mutation_id}:`, e);
+        }
+      });
+    } else {
+      console.log('🧪 User is in control group. Not applying experiments.');
+    }
+  }
+
+  cache = { config, at: Date.now() };
+  return config;
 }
 
 export function useAppConfig() {

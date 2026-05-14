@@ -7,7 +7,7 @@ interface Mutation {
   mutation_id: string;
   title: string;
   description: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'experimenting';
   source: string;
   patch: string;
   created_at: string;
@@ -39,13 +39,18 @@ export function MutationsInbox({ onConfigChanged }: MutationsInboxProps) {
 
   useEffect(load, []);
 
-  const act = async (mutationId: string, action: 'approve' | 'reject') => {
+  const act = async (mutationId: string, action: 'approve' | 'reject' | 'experiment') => {
     setActing(mutationId);
     try {
       await axios.post(`${CONTROL_PLANE}/api/apps/${APP_ID}/mutations/${mutationId}/${action}`);
-      showToast(action === 'approve' ? '✅ Mutation approved & deployed!' : '❌ Mutation rejected.');
+      const msgs: Record<string, string> = {
+        approve: '✅ Mutation approved & deployed!',
+        reject: '❌ Mutation rejected.',
+        experiment: '🧪 Experiment started (50% traffic)'
+      };
+      showToast(msgs[action]);
       load();
-      if (action === 'approve') onConfigChanged();
+      if (action === 'approve' || action === 'experiment') onConfigChanged();
     } catch (e: any) {
       showToast(`Error: ${e.response?.data?.error ?? e.message}`);
     } finally {
@@ -65,7 +70,8 @@ export function MutationsInbox({ onConfigChanged }: MutationsInboxProps) {
   };
 
   const pending  = mutations.filter(m => m.status === 'pending');
-  const resolved = mutations.filter(m => m.status !== 'pending');
+  const experimenting = mutations.filter(m => m.status === 'experimenting');
+  const resolved = mutations.filter(m => m.status === 'approved' || m.status === 'rejected');
 
   if (loading) return <div className="loading-page"><div className="spinner" /></div>;
 
@@ -129,6 +135,13 @@ export function MutationsInbox({ onConfigChanged }: MutationsInboxProps) {
                   <Check size={13} /> Approve & Deploy
                 </button>
                 <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => act(m.mutation_id, 'experiment')}
+                  disabled={acting === m.mutation_id}
+                >
+                  <Brain size={13} /> Start A/B Experiment
+                </button>
+                <button
                   className="btn btn-danger btn-sm"
                   onClick={() => act(m.mutation_id, 'reject')}
                   disabled={acting === m.mutation_id}
@@ -146,6 +159,37 @@ export function MutationsInbox({ onConfigChanged }: MutationsInboxProps) {
           ))
         )}
       </div>
+
+      {/* Experimenting */}
+      {experimenting.length > 0 && (
+        <div style={{ marginBottom: 32 }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Brain size={14} style={{ color: 'var(--accent)' }} />
+            <span style={{ fontWeight: 600, fontSize: 13 }}>Active Experiments ({experimenting.length})</span>
+          </div>
+          {experimenting.map(m => (
+            <div className="mutation-card" key={m.mutation_id} style={{ borderLeft: '3px solid var(--accent)' }}>
+              <div className="mutation-card-header">
+                <div>
+                  <div className="mutation-title">{m.title}</div>
+                  <div className="text-muted" style={{ marginTop: 4 }}>Deployed: {new Date(m.created_at).toLocaleString()}</div>
+                </div>
+                <span className="badge badge-pending">Experimenting (50%)</span>
+              </div>
+              <p className="mutation-desc">{m.description}</p>
+              
+              <div className="mutation-actions" style={{ marginTop: 16 }}>
+                <button className="btn btn-success btn-sm" onClick={() => act(m.mutation_id, 'approve')} disabled={acting === m.mutation_id}>
+                  <Check size={13} /> Conclude & Rollout (100%)
+                </button>
+                <button className="btn btn-danger btn-sm" onClick={() => act(m.mutation_id, 'reject')} disabled={acting === m.mutation_id}>
+                  <X size={13} /> Halt Experiment
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Resolved */}
       {resolved.length > 0 && (

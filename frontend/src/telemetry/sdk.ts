@@ -3,7 +3,9 @@
  * Captures all user interactions and batches them to the Event Gateway.
  */
 
-const SESSION_ID = crypto.randomUUID();
+import { getSessionId } from '../engine/ConfigLoader';
+
+const SESSION_ID = getSessionId();
 const GATEWAY_URL = import.meta.env.VITE_EVENT_GATEWAY_URL || 'http://localhost:3002';
 
 interface TelemetryEvent {
