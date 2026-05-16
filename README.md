@@ -100,6 +100,28 @@ To simulate the AI analyzing user behavior and generating a UI mutation:
 3. Return to the web app and navigate to the **AI Inbox**. You will see a new pending UI optimization.
 4. Click **Start A/B Experiment** to deploy it to 50% of sessions, or **Shadow Preview** to see the raw diff.
 
+### 🌐 External Website Integration (Visual Optimizer)
+
+Dynamo is no longer limited to declarative internal apps. You can run Dynamo as a drop-in **Visual Optimizer Snippet** on any existing external client website (e.g., Shopify, WordPress).
+
+1. **Build the Standalone SDK:**
+   ```bash
+   cd sdk
+   npm run build
+   ```
+   This compiles the engine into a tiny, standalone `dist/dynamo.min.js`.
+
+2. **Inject the Script:**
+   Provide this snippet to the client to paste into the `<head>` of their website:
+   ```html
+   <script src="https://your-cdn.com/dynamo.min.js" data-app-id="app-client-123"></script>
+   ```
+
+3. **How it Works:**
+   - The snippet autonomously tracks clicks, navigation, and form submissions on the external site.
+   - The Intelligence Service (`style_analyzer.py`) processes this telemetry to generate dazzling UI upgrades (raw CSS/JS injections).
+   - Once approved by an Admin in the Control Plane, the SDK automatically pulls and applies the visual mutations directly onto the client's live DOM.
+
 ---
 
 ## 🛠️ Tech Stack
@@ -108,4 +130,5 @@ To simulate the AI analyzing user behavior and generating a UI mutation:
 - **Backend / APIs**: Node.js, Express
 - **Databases**: Better-SQLite3
 - **Intelligence Layer**: Python, Requests
-- **Data Mutability**: fast-json-patch
+- **Data Mutability**: fast-json-patch, DOM Injection
+

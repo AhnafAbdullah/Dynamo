@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>External Client Website</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+    }
+    .header {
+      background: #222;
+      color: white;
+      padding: 1rem 2rem;
+      text-align: center;
+    }
+    .content {
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      margin-top: 2rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #0066cc;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      margin-top: 10px;
+      cursor: pointer;
+      border: none;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #0052a3;
+    }
+  </style>
+  <!-- Dynamo Optimizer SDK -->
+  <script src="/sdk/dist/dynamo.min.js" data-app-id="app-demo-001"></script>
+</head>
+<body>
+  <div class="header">
+    <h1>Client E-Commerce Store</h1>
+  </div>
+  <div class="content">
+    <h2>Welcome to our shop!</h2>
+    <p>This is a standard, hardcoded HTML page on a client's website. The Dynamo SDK is embedded in the head.</p>
+    <p>Try clicking the button below, which tracks an event and might be mutated by Dynamo if an experiment is active.</p>
+    <button class="btn" id="buy-button">Buy Now</button>
+  </div>
+</body>
+</html>

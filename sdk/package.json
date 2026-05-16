@@ -1,0 +1,12 @@
+{
+  "name": "dynamo-sdk",
+  "version": "1.0.0",
+  "description": "Dynamo Visual Optimizer SDK",
+  "main": "dist/dynamo.min.js",
+  "scripts": {
+    "build": "esbuild src/dynamo.js --bundle --minify --sourcemap --outfile=dist/dynamo.min.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
